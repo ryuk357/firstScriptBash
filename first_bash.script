@@ -1,0 +1,188 @@
+#!/bin/bash
+
+choice_user="\033[036m__|A- Afficher le nombre d'utilisateur\n
+_|B- Afficher les utilisateurs systemes\n
+_|C- Afficher les utilisateurs standards\n
+_|D- Afficher les groupes du serveur\n
+_|E- Afficher les groupes systemes\n
+_|F- Afficher les groupes standards\n
+_|G- Creer un utilisateur\n
+_|H- Creer un groupe\n
+_|I- Changer le mot de passe d'un utilisateur\n
+_|R- Retour au menu\033[00m"
+choice_services="\033[033m__|A- Relancer le serveur apache \n
+_|B- Relance le serveur postfix\n
+_|R- Retour au menu\033[00m"
+choice_network="\033[031m_|A- Afficher les informations du réseau \n
+_|B- Tester le reseau\n
+_|R- Retour au menu\033[00m"
+choice_other="\033[032m_|A- Redemarrer serveur\n
+_|R- Retour au menu\033[00m" 
+menu="Bonjour, que souhaitez vous faire? \n 
+\033[036m1- Gerer les utilisateurs\033[00m \n 
+\033[033m2- Gerer les services\033[00m \n 
+\033[031m3- Tester le reseau\033[00m \n 
+\033[032m4- Action diverses\033[00m \n
+5- Quitter"
+
+#--------------------------------------------------------------------------------#
+#------------------------------Appel du menu-------------------------------------#
+#--------------------------------------------------------------------------------#
+echo -e "\n  \033[032m ▄████████ ███    █▄     ▄███████▄    ▄████████    ▄████████  ▄█    █▄   ▄█     ▄████████  ▄█   ▄██████▄  ███▄▄▄▄   
+  ███    ███ ███    ███   ███    ███   ███    ███   ███    ███ ███    ███ ███    ███    ███ ███  ███    ███ ███▀▀▀██▄ 
+  ███    █▀  ███    ███   ███    ███   ███    █▀    ███    ███ ███    ███ ███▌   ███    █▀  ███▌ ███    ███ ███   ███ 
+  ███        ███    ███   ███    ███  ▄███▄▄▄      ▄███▄▄▄▄██▀ ███    ███ ███▌   ███        ███▌ ███    ███ ███   ███ 
+▀███████████ ███    ███ ▀█████████▀  ▀▀███▀▀▀     ▀▀███▀▀▀▀▀   ███    ███ ███▌ ▀███████████ ███▌ ███    ███ ███   ███ 
+         ███ ███    ███   ███          ███    █▄  ▀███████████ ███    ███ ███           ███ ███  ███    ███ ███   ███ 
+   ▄█    ███ ███    ███   ███          ███    ███   ███    ███ ███    ███ ███     ▄█    ███ ███  ███    ███ ███   ███ 
+ ▄████████▀  ████████▀   ▄████▀        ██████████   ███    ███  ▀██████▀  █▀    ▄████████▀  █▀    ▀██████▀   ▀█   █▀  
+                                                    ███    ███                                                        
+\033[00m"
+echo -e "\033[031m		____________________________________________________________________\033[00m"
+echo -e "\033[031m		|!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!|\033[00m"
+echo -e "\033[031m		|!!!!!! CE SCRIPT DOIT ETRE EXECUTER AVEC LES DROITS D'ADMIN !!!!!!|\033[00m"
+echo -e "\033[031m		|!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!|\033[00m"
+echo -e "\033[031m		|__________________________________________________________________|\033[00m\n\n\n"
+
+	function print_menu() {
+		while (true)
+		do
+		  echo -e $menu
+		  read choice1
+		  case $choice1 in
+			"1")user_management;;
+							
+			"2")service_restart;;
+			"3")network_analyse;;
+			"4")other_action;;
+			"5")exit 0;;	
+		  esac
+	  	done
+	  }
+#---------------------------------------------------------------------------------#
+#--------------------------User/group administration part-------------------------#
+#---------------------------------------------------------------------------------#
+	
+	function user_management() {
+		while (true)
+		do
+		  echo -e $choice_user
+		  read choice2
+		  case $choice2 in
+			"A") display_nbr_user;;
+			"B") awk -F':' '$3<1000 {print $1}' /etc/passwd;; 
+			"C") awk -F':' '$3>=1000 {print $1}' /etc/passwd;;
+			"D") awk -F ':' '$3>=1000 {print $1}' /etc/group;;
+			"E") awk -F ':' '$3<1000 {print $1}' /etc/group;;
+			"F") awk -F ':' '$3>=0 && $3<100 {print $1}' /etc/group;;
+                        "G") create_user;;	
+			"H") create_group;;
+			"I") change_passwd;;
+			"R") print_menu;;
+		  esac
+		done
+	}	
+	
+	function display_nbr_user() {
+		nbrUser=$(wc -l /etc/passwd | cut -d ' ' -f1)
+		userStandard=$(awk -F':' '$3>=1000 {print $1}' /etc/passwd)
+		userSystem=$(awk -F':' '$3<1000 {print $1}' /etc/passwd)
+		userStandardLine=""
+		userSystemLine=""
+
+		for i in $userStandard
+		do
+			userStandardLine="${userStandardLine} ${i}"
+		done
+		
+		for y in $userSystem
+		do
+			userSystemLine="${userSystemLine} ${y}"
+		done
+			
+		echo -e "\033[036mNombre d'utilisateur:\033[00m\n $nbrUser"
+		echo -e "\033[036mUtilisateur Standard:\033[00m\n $userStandardLine"
+		echo -e "\033[036mUtilisateur Systeme:\033[00m\n $userSystemLine"
+		
+	}
+	
+	function create_user() {
+		echo "Choisir un nom d'utilisateur"
+		read user
+		echo "Choisir un mot de passe"
+		read paswd
+		useradd -m "$user" -p "$paswd"
+	}
+
+	function create_group() {
+		echo "Choisir un nom de groupe"
+		read groupName
+		groupadd $groupName
+	}
+
+	function change_passwd() {
+		echo "Changer le mot de passe de quel utilisateur?"
+		read user
+		passwd $user
+	}
+
+#---------------------------------------------------------------------------------#
+#---------------------------------service restart---------------------------------#
+#---------------------------------------------------------------------------------#
+	
+	function service_restart() {
+		while (true)
+		do
+		  echo -e $choice_services
+		  read choice2
+		  case $choice2 in
+			"A")systemctl restart apache2
+				echo "Service relancé";;
+			"B")systemctl restart postfix
+				echo "Service relancé";;
+			"R")print_menu;;
+		  esac
+		done
+	}
+
+#---------------------------------------------------------------------------------#
+#------------------------------network part---------------------------------------#
+#---------------------------------------------------------------------------------#
+	
+	function network_analyse(){
+		while (true)
+		do
+		  echo -e $choice_network
+		  read choice2
+		  case $choice2 in
+			"A")ip a;;
+			"B")ping -c 4 8.8.8.8;;
+			"R")print_menu;;
+		  esac
+	  	done  
+	}
+
+#---------------------------------------------------------------------------------#
+#--------------------------other part---------------------------------------------#
+#---------------------------------------------------------------------------------#
+
+
+	function other_action() {
+		while (true)
+		do
+		  echo -e $choice_other
+		  read choice2
+		  case $choice2 in 
+			"A")reboot;;
+			"R")print_menu;;
+		  esac
+		done
+	}
+
+#---------------------------------------------------------------------------------#
+#####################################START#########################################
+#---------------------------------------------------------------------------------#
+
+print_menu
+
+
